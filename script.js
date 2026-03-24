@@ -237,6 +237,11 @@ const App = {
 
   // ── Routing ───────────────────────────────────────────────
   showPage(name) {
+    if (name === "departments" && !this.currentUser?.isIT) {
+      this.toast("ไม่มีสิทธิ์เข้าถึงหน้านี้", "error");
+      this.showPage("dashboard");
+      return;
+    }
     const map = {
       dashboard: "pageDashboard",
       assetList: "pageAssetList",
