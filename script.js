@@ -53,6 +53,7 @@ const App = {
     }
 
     this.bindEvents();
+    if (window.ChartDataLabels) Chart.register(ChartDataLabels);
 
     try {
       await this.loadDepartments();
@@ -328,6 +329,11 @@ const App = {
         responsive: true, maintainAspectRatio: false,
         cutout: "65%",
         plugins: {
+          datalabels: {
+            color: '#fff',
+            formatter: (v) => v || '',
+            font: { weight: 'bold', size: 11 }
+          },
           legend: { 
             position: "right", 
             labels: { 
@@ -376,7 +382,16 @@ const App = {
       options: {
         responsive: true, maintainAspectRatio: false,
         indexAxis: "y",
-        plugins: { legend: { display: false } },
+        plugins: { 
+          legend: { display: false },
+          datalabels: {
+            color: textColor,
+            anchor: 'end',
+            align: 'right',
+            offset: 4,
+            font: { weight: 'bold', size: 10 }
+          }
+        },
         scales: {
           x: { grid: { color: gridColor }, ticks: { font: { size: 11 }, color: textColor } },
           y: { grid: { display: false }, ticks: { font: { size: 12 }, color: textColor } },
@@ -410,7 +425,16 @@ const App = {
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        plugins: { 
+          legend: { display: false },
+          datalabels: {
+            color: textColor,
+            anchor: 'end',
+            align: 'top',
+            offset: 4,
+            font: { weight: 'bold', size: 10 }
+          }
+        },
         scales: {
           x: { grid: { display: false }, ticks: { font: { size: 11 }, color: textColor, maxRotation: 35 } },
           y: { grid: { color: gridColor }, ticks: { font: { size: 11 }, color: textColor, precision: 0 } },

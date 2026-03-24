@@ -8,8 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     /* ── Design Tokens ───────────────────────────────────── */
     :root {
@@ -438,21 +439,20 @@
 
     /* Badges */
     .badge {
-      display: inline-flex; align-items: center;
-      padding: 3px 10px;
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 4px 12px;
       border-radius: var(--radius-full);
-      font-size: 11px; font-weight: 600;
+      font-size: 11px; font-weight: 700;
       white-space: nowrap;
+      min-width: 80px;
     }
-    .badge-ok       { background: var(--success-bg); color: var(--success); }
-    .badge-broken   { background: var(--danger-bg);  color: var(--danger); }
-    .badge-reserve  { background: var(--amber-light); color: var(--amber); }
-    .badge-lost     { background: var(--neutral-bg); color: var(--neutral); }
-    .badge-pending  { background: var(--coral-light); color: var(--coral); }
-    .badge-type {
-      background: var(--slate-light); color: var(--slate);
-      padding: 2px 8px; font-size: 11px; font-weight: 500;
-    }
+    .badge-ok       { background: var(--stat-ok-bg); color: var(--stat-ok-text); }
+    .badge-broken   { background: var(--stat-broken-bg); color: var(--stat-broken-text); }
+    .badge-reserve  { background: var(--stat-reserve-bg); color: var(--stat-reserve-text); }
+    .badge-lost     { background: var(--stat-lost-bg); color: var(--stat-lost-text); }
+    .badge-pending  { background: var(--stat-total-bg); color: var(--stat-total-text); }
+    .badge-type     { background: var(--border-light); color: var(--text-2); font-weight: 500; }
+
 
     /* Action buttons */
     .action-btns { display: flex; gap: 6px; justify-content: flex-end; }
