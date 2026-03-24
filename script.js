@@ -827,34 +827,77 @@ const App = {
 
   importExcel() {
     const inp = document.createElement("input");
-    inp.type = "file"; inp.accept = ".xlsx,.xls";
+    inp.type = "file"; 
+    inp.accept = ".xlsx,.xls,.csv";
     inp.addEventListener("change", async (e) => {
-      const file = e.target.files[0]; if (!file) return;
-      const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(ws);
-      const typeByName = this.typeByName;
-      const rows = json.filter((r) => r.ID).map((r) => ({
-        id: r.ID, name: r["ชื่อทรัพย์สิน"] || "", username: r["ผู้ใช้งาน"] || "",
-        nickname: r["ชื่อเล่น"] || "",
-        type: typeByName[r["ประเภท"]] || r["ประเภท"] || "OT",
-        serial: r["Serial Number"] || "",
-        department: r["แผนก"] || "IT",
-        purchase_date: r["วันที่ซื้อ"] || null,
-        price: r["ราคา"] || null,
-        warranty_expiry: r["วันหมดประกัน"] || null,
-        status: r["สถานะ"] || "ปกติ",
-        last_check: r["เช็คล่าสุด"] || null,
-        specs: r["สเปค"] || "", notes: r["หมายเหตุ"] || "",
-        is_approved: true, usage_history: [],
-      }));
+      const file = e.target.files[0]; 
+      if (!file) return;
+
       this.showLoader();
-      const { error } = await this.db.from("assets").upsert(rows);
-      this.hideLoader();
-      if (error) { this.toast("นำเข้าล้มเหลว: " + error.message, "error"); return; }
-      this.toast(`นำเข้าสำเร็จ ${rows.length} รายการ`, "success");
-      await this.loadData();
+      try {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(ws);
+        
+        if (json.length === 0) {
+          throw new Error("ไฟล์ว่างเปล่าหรือไม่มีข้อมูล");
+        }
+
+        const typeByName = this.typeByName;
+        const assetRows = [];
+        const deptsFound = new Set();
+
+        json.forEach((r) => {
+          // ใช้ชื่อหัวตารางให้ตรงกับไฟล์ CSV/Excel (ID, ชื่อทรัพย์สิน, ...)
+          const id = r.ID || r["รหัส"] || r["id"];
+          if (!id) return;
+
+          const dept = (r["แผนก"] || "IT").trim();
+          deptsFound.add(dept);
+
+          assetRows.push({
+            id: String(id),
+            name: r["ชื่อทรัพย์สิน"] || "",
+            username: r["ผู้ใช้งาน"] || "",
+            nickname: r["ชื่อเล่น"] || "",
+            type: typeByName[r["ประเภท"]] || r["ประเภท"] || "OT",
+            serial: String(r["Serial Number"] || ""),
+            department: dept,
+            purchase_date: r["วันที่ซื้อ"] || null,
+            price: r["ราคา"] || null,
+            warranty_expiry: r["วันหมดประกัน"] || null,
+            status: r["สถานะ"] || "ปกติ",
+            last_check: r["เช็คล่าสุด"] || null,
+            specs: r["สเปค"] || "",
+            notes: r["หมายเหตุ"] || "",
+            is_approved: true,
+            usage_history: [],
+          });
+        });
+
+        if (assetRows.length === 0) {
+          throw new Error("ไม่พบข้อมูลที่ถูกต้องในไฟล์ (ตรวจสอบหัวตาราง 'ID')");
+        }
+
+        // 1. นำเข้าแผนกใหม่ก่อน เพื่อไม่ให้ติด Foreign Key
+        const deptPayload = Array.from(deptsFound).map(d => ({ name: d }));
+        await this.db.from("departments").upsert(deptPayload, { onConflict: 'name' });
+        await this.loadDepartments(); // refresh local depts
+        this.populateDropdowns();
+
+        // 2. นำเข้าทรัพย์สิน
+        const { error } = await this.db.from("assets").upsert(assetRows);
+        if (error) throw error;
+
+        this.toast(`นำเข้าสำเร็จ ${assetRows.length} รายการ`, "success");
+        await this.loadData();
+      } catch (err) {
+        console.error("Import Error:", err);
+        this.toast("นำเข้าล้มเหลว: " + err.message, "error");
+      } finally {
+        this.hideLoader();
+      }
     });
     inp.click();
   },
