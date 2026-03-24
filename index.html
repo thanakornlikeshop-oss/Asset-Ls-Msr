@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asset IT — ระบบจัดการทรัพย์สิน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    /* ── Design Tokens ───────────────────────────────────── */
+    :root {
+      --bg:           #f0ece6;
+      --surface:      #faf8f5;
+      --surface-2:    #fff;
+      --sidebar-bg:   #faf8f5;
+      --border:       #e8e2d9;
+      --border-light: #f0ece6;
+
+      --text-1: #1a1714;
+      --text-2: #5c564f;
+      --text-3: #9b9389;
+
+      /* accent palette — teal from the image */
+      --accent:       #3a9b8a;
+      --accent-light: #e8f5f2;
+      --accent-dark:  #2a7a6b;
+
+      --coral:        #e07a5f;
+      --coral-light:  #fdf0ec;
+      --amber:        #c68d3e;
+      --amber-light:  #fdf4e7;
+      --purple:       #7c6fa0;
+      --purple-light: #f2f0f8;
+      --slate:        #5c6b7a;
+      --slate-light:  #eef1f4;
+
+      --success:      #3a9b6b;
+      --success-bg:   #e8f5ee;
+      --warning:      #c68d3e;
+      --warning-bg:   #fdf4e7;
+      --danger:       #d94f3d;
+      --danger-bg:    #fdecea;
+      --neutral:      #8a8580;
+      --neutral-bg:   #f0ece6;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 20px;
+      --radius-2xl: 28px;
+      --radius-full: 9999px;
+
+      --shadow-xs: 0 1px 3px rgba(0,0,0,.05);
+      --shadow-sm: 0 2px 10px rgba(0,0,0,.07);
+      --shadow-md: 0 4px 20px rgba(0,0,0,.09);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,.11);
+
+      --sidebar-w: 240px;
+      --topbar-h: 60px;
+      --trans: 0.18s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ── Reset & Base ────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+    body {
+      font-family: 'DM Sans', 'Sarabun', sans-serif;
+      background: var(--bg);
+      color: var(--text-1);
+      min-height: 100vh;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    button { cursor: pointer; border: none; background: none; font: inherit; }
+    input, select, textarea { font: inherit; }
+    a { text-decoration: none; color: inherit; }
+    ul { list-style: none; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+
+    /* ── Layout ──────────────────────────────────────────── */
+    .app-shell {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ─────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      z-index: 200;
+      transition: transform var(--trans);
+    }
+    .sidebar-logo {
+      padding: 20px 20px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: var(--accent);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 15px;
+    }
+    .logo-text { font-size: 15px; font-weight: 700; color: var(--text-1); letter-spacing: -0.3px; }
+    .logo-sub { font-size: 10px; color: var(--text-3); font-weight: 400; }
+
+    .sidebar-user {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border-light);
+    }
+    .user-avatar {
+      width: 40px; height: 40px;
+      border-radius: var(--radius-full);
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 16px; font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .user-name { font-size: 13px; font-weight: 600; color: var(--text-1); }
+    .user-role { font-size: 11px; color: var(--text-3); }
+
+    .sidebar-nav { flex: 1; padding: 12px 12px; overflow-y: auto; }
+    .nav-label {
+      font-size: 10px; font-weight: 600; color: var(--text-3);
+      letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 0 8px; margin: 12px 0 6px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px;
+      border-radius: var(--radius-md);
+      color: var(--text-2);
+      font-size: 13.5px; font-weight: 500;
+      cursor: pointer;
+      transition: background var(--trans), color var(--trans);
+      user-select: none;
+      position: relative;
+    }
+    .nav-item:hover { background: var(--border-light); color: var(--text-1); }
+    .nav-item.active {
+      background: var(--accent-light);
+      color: var(--accent-dark);
+      font-weight: 600;
+    }
+    .nav-item .nav-icon { width: 18px; text-align: center; font-size: 14px; }
+    .nav-badge {
+      margin-left: auto;
+      background: var(--coral);
+      color: #fff;
+      font-size: 10px; font-weight: 700;
+      padding: 1px 6px;
+      border-radius: var(--radius-full);
+      min-width: 18px; text-align: center;
+    }
+    .nav-badge.hidden { display: none; }
+
+    .sidebar-footer {
+      padding: 12px 12px;
+      border-top: 1px solid var(--border-light);
+    }
+    .btn-logout {
+      width: 100%;
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 12px;
+      border-radius: var(--radius-md);
+      color: var(--text-3); font-size: 13px;
+      transition: background var(--trans), color var(--trans);
+    }
+    .btn-logout:hover { background: var(--danger-bg); color: var(--danger); }
+
+    /* ── Main Content ─────────────────────────────────────── */
+    .main-content {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Topbar ───────────────────────────────────────────── */
+    .topbar {
+      height: var(--topbar-h);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+    .topbar-title { font-size: 18px; font-weight: 700; color: var(--text-1); letter-spacing: -0.3px; }
+    .topbar-spacer { flex: 1; }
+    .topbar-search {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-full);
+      padding: 6px 14px;
+      width: 200px;
+      transition: border-color var(--trans), box-shadow var(--trans);
+    }
+    .topbar-search:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(58,155,138,.12);
+    }
+    .topbar-search input {
+      border: none; background: none; outline: none;
+      font-size: 13px; color: var(--text-1); width: 100%;
+    }
+    .topbar-search .fa { color: var(--text-3); font-size: 13px; }
+    .btn-mobile-menu {
+      display: none;
+      padding: 6px 8px;
+      border-radius: var(--radius-md);
+      color: var(--text-2);
+      font-size: 18px;
+    }
+    .btn-mobile-menu:hover { background: var(--bg); }
+
+    /* ── Page Area ────────────────────────────────────────── */
+    .page-area { flex: 1; overflow-y: auto; padding: 24px; }
+    .page { display: none; }
+    .page.active { display: block; animation: fadeInUp .3s cubic-bezier(.16,1,.3,1) both; }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Cards ────────────────────────────────────────────── */
+    .card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      box-shadow: var(--shadow-xs);
+    }
+    .card-title {
+      font-size: 13px; font-weight: 600;
+      color: var(--text-2); text-transform: uppercase;
+      letter-spacing: 0.06em; margin-bottom: 16px;
+    }
+
+    /* ── Stat Cards ───────────────────────────────────────── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 18px 20px;
+      display: flex; flex-direction: column; gap: 4px;
+      position: relative; overflow: hidden;
+      transition: transform var(--trans), box-shadow var(--trans);
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .stat-card.sc-total::before { background: var(--accent); }
+    .stat-card.sc-ok::before    { background: var(--success); }
+    .stat-card.sc-broken::before{ background: var(--danger); }
+    .stat-card.sc-reserve::before{background: var(--amber); }
+    .stat-card.sc-pending::before{background: var(--coral); }
+    .stat-card.sc-lost::before  { background: var(--neutral); }
+
+    .stat-icon {
+      width: 32px; height: 32px;
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; margin-bottom: 8px;
+    }
+    .sc-total   .stat-icon { background: var(--accent-light);  color: var(--accent); }
+    .sc-ok      .stat-icon { background: var(--success-bg);    color: var(--success); }
+    .sc-broken  .stat-icon { background: var(--danger-bg);     color: var(--danger); }
+    .sc-reserve .stat-icon { background: var(--amber-light);   color: var(--amber); }
+    .sc-pending .stat-icon { background: var(--coral-light);   color: var(--coral); }
+    .sc-lost    .stat-icon { background: var(--neutral-bg);    color: var(--neutral); }
+
+    .stat-value {
+      font-size: 28px; font-weight: 700;
+      color: var(--text-1); letter-spacing: -1px; line-height: 1;
+    }
+    .stat-label { font-size: 12px; color: var(--text-3); font-weight: 500; margin-top: 2px; }
+
+    /* ── Chart Grid ───────────────────────────────────────── */
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .chart-grid .chart-full { grid-column: 1 / -1; }
+    .chart-wrap { height: 240px; }
+    .chart-wrap-tall { height: 280px; }
+
+    /* ── Asset List Page ──────────────────────────────────── */
+    .page-header {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .page-header h2 {
+      font-size: 20px; font-weight: 700; color: var(--text-1);
+      letter-spacing: -0.4px; flex: 1;
+    }
+
+    /* filter bar */
+    .filter-bar {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 14px 18px;
+      margin-bottom: 16px;
+    }
+    .filter-bar input, .filter-bar select {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 7px 12px;
+      font-size: 13px;
+      color: var(--text-1);
+      outline: none;
+      transition: border-color var(--trans);
+      min-width: 140px;
+    }
+    .filter-bar input:focus, .filter-bar select:focus { border-color: var(--accent); }
+    .filter-bar input { flex: 1; min-width: 180px; }
+
+    /* Table */
+    .table-wrap {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+    .table-inner { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 11px; font-weight: 600;
+      color: var(--text-3);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody tr { border-bottom: 1px solid var(--border-light); transition: background var(--trans); }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--bg); }
+    tbody td {
+      padding: 11px 16px;
+      font-size: 13px; color: var(--text-1);
+      vertical-align: middle;
+    }
+    tbody td.muted { color: var(--text-3); }
+
+    /* Pagination */
+    .pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 18px;
+      border-top: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    }
+    .pagination-info { font-size: 12px; color: var(--text-3); }
+    .pagination-btns { display: flex; gap: 6px; }
+    .btn-page {
+      width: 30px; height: 30px;
+      border-radius: var(--radius-md);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-2); font-size: 12px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--trans), color var(--trans);
+    }
+    .btn-page:hover:not(:disabled) { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+    .btn-page:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Badges */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      font-size: 11px; font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge-ok       { background: var(--success-bg); color: var(--success); }
+    .badge-broken   { background: var(--danger-bg);  color: var(--danger); }
+    .badge-reserve  { background: var(--amber-light); color: var(--amber); }
+    .badge-lost     { background: var(--neutral-bg); color: var(--neutral); }
+    .badge-pending  { background: var(--coral-light); color: var(--coral); }
+    .badge-type {
+      background: var(--slate-light); color: var(--slate);
+      padding: 2px 8px; font-size: 11px; font-weight: 500;
+    }
+
+    /* Action buttons */
+    .action-btns { display: flex; gap: 6px; justify-content: flex-end; }
+    .btn-icon {
+      width: 28px; height: 28px;
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px;
+      transition: background var(--trans), color var(--trans);
+    }
+    .btn-icon-view   { color: var(--text-3); } 
+    .btn-icon-view:hover { background: var(--bg); color: var(--accent); }
+    .btn-icon-edit   { color: var(--text-3); }
+    .btn-icon-edit:hover { background: var(--accent-light); color: var(--accent-dark); }
+    .btn-icon-approve{ color: var(--text-3); }
+    .btn-icon-approve:hover { background: var(--success-bg); color: var(--success); }
+    .btn-icon-delete { color: var(--text-3); }
+    .btn-icon-delete:hover { background: var(--danger-bg); color: var(--danger); }
+
+    /* ── Buttons ──────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 600;
+      transition: all var(--trans);
+      cursor: pointer;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-dark); transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+    .btn-secondary {
+      background: var(--surface-2);
+      border: 1.5px solid var(--border);
+      color: var(--text-2);
+    }
+    .btn-secondary:hover { background: var(--bg); border-color: var(--text-3); }
+    .btn-ghost {
+      background: transparent;
+      border: 1.5px solid var(--border);
+      color: var(--text-2);
+    }
+    .btn-ghost:hover { background: var(--bg); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { opacity: .88; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+    /* ── Forms ────────────────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label { font-size: 12px; font-weight: 600; color: var(--text-2); }
+    .form-input {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 9px 13px;
+      font-size: 13.5px; color: var(--text-1);
+      outline: none;
+      transition: border-color var(--trans), box-shadow var(--trans);
+    }
+    .form-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(58,155,138,.12);
+      background: var(--surface-2);
+    }
+    .form-input[readonly], .form-input:disabled {
+      background: var(--border-light); color: var(--text-3); cursor: not-allowed;
+    }
+    .form-input option { background: var(--surface-2); }
+    textarea.form-input { resize: vertical; min-height: 80px; }
+
+    /* ── Modals ───────────────────────────────────────────── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(26,23,20,.45);
+      backdrop-filter: blur(4px);
+      z-index: 500;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop.hidden { display: none; }
+    .modal {
+      background: var(--surface-2);
+      border-radius: var(--radius-2xl);
+      box-shadow: var(--shadow-lg);
+      width: 100%; max-width: 560px;
+      max-height: 90vh; overflow-y: auto;
+      animation: fadeInUp .25s cubic-bezier(.16,1,.3,1) both;
+    }
+    .modal-lg { max-width: 640px; }
+    .modal-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; color: var(--text-1); }
+    .modal-body { padding: 20px 24px; }
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: flex-end; gap: 10px;
+    }
+    .btn-close {
+      width: 30px; height: 30px;
+      border-radius: var(--radius-full);
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-3); font-size: 16px;
+      transition: background var(--trans), color var(--trans);
+    }
+    .btn-close:hover { background: var(--danger-bg); color: var(--danger); }
+
+    /* ── Login Modal ──────────────────────────────────────── */
+    #loginBackdrop .modal {
+      max-width: 400px;
+      border-radius: var(--radius-2xl);
+    }
+    .login-logo {
+      text-align: center; padding: 28px 24px 0;
+    }
+    .login-logo .logo-icon {
+      width: 52px; height: 52px; font-size: 22px;
+      margin: 0 auto 12px;
+    }
+    .login-logo h1 { font-size: 20px; font-weight: 700; color: var(--text-1); }
+    .login-logo p { font-size: 13px; color: var(--text-3); margin-top: 4px; }
+
+    /* ── Loader ───────────────────────────────────────────── */
+    #loader {
+      position: fixed; inset: 0;
+      background: rgba(240,236,230,.7);
+      backdrop-filter: blur(2px);
+      z-index: 9999;
+      display: flex; align-items: center; justify-content: center;
+    }
+    #loader.hidden { display: none; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Toast ────────────────────────────────────────────── */
+    #toastContainer {
+      position: fixed; top: 16px; right: 16px;
+      z-index: 10000; display: flex; flex-direction: column; gap: 8px;
+    }
+    .toast {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px;
+      border-radius: var(--radius-lg);
+      font-size: 13px; font-weight: 500;
+      color: #fff; min-width: 220px;
+      box-shadow: var(--shadow-lg);
+      animation: slideInRight .25s cubic-bezier(.16,1,.3,1) both,
+                 fadeOut .4s ease .3s 8.8s forwards; /* removed */
+    }
+    .toast-success { background: var(--success); }
+    .toast-error   { background: var(--danger); }
+    .toast-info    { background: var(--accent); }
+    @keyframes slideInRight {
+      from { transform: translateX(120%); opacity: 0; }
+      to   { transform: translateX(0); opacity: 1; }
+    }
+
+    /* ── Detail Modal ─────────────────────────────────────── */
+    .detail-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    .detail-item { display: flex; flex-direction: column; gap: 2px; }
+    .detail-item.full { grid-column: 1 / -1; }
+    .detail-label { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .05em; }
+    .detail-value { font-size: 13.5px; color: var(--text-1); }
+    .detail-box {
+      background: var(--bg); border-radius: var(--radius-md);
+      padding: 10px 12px; font-size: 13px; color: var(--text-1);
+      white-space: pre-wrap; min-height: 32px;
+    }
+    .history-list { display: flex; flex-direction: column; gap: 6px; max-height: 160px; overflow-y: auto; }
+    .history-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px;
+      background: var(--bg);
+      border-radius: var(--radius-md);
+      font-size: 12.5px;
+    }
+    .history-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .history-dot.active { background: var(--success); }
+    .history-dot.past   { background: var(--neutral); }
+
+    /* ── Department Page ──────────────────────────────────── */
+    .dept-list { display: flex; flex-direction: column; gap: 0; }
+    .dept-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border-light);
+      transition: background var(--trans);
+    }
+    .dept-item:last-child { border-bottom: none; }
+    .dept-item:hover { background: var(--bg); }
+    .dept-name { font-size: 14px; font-weight: 500; color: var(--text-1); }
+    .dept-count { font-size: 12px; color: var(--text-3); }
+
+    /* ── Responsive ───────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); box-shadow: var(--shadow-lg); }
+      .main-content { margin-left: 0; }
+      .btn-mobile-menu { display: flex; }
+      .chart-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+      .form-grid { grid-template-columns: 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .page-area { padding: 14px; }
+      .filter-bar { padding: 10px; }
+    }
+    /* mobile table */
+    @media (max-width: 720px) {
+      thead { display: none; }
+      tbody tr {
+        display: block;
+        padding: 12px;
+        margin-bottom: 8px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        border-bottom: 1px solid var(--border) !important;
+      }
+      tbody td {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 4px 0; font-size: 12.5px;
+      }
+      tbody td::before {
+        content: attr(data-label);
+        font-weight: 600; color: var(--text-3);
+        font-size: 11px; text-transform: uppercase;
+      }
+    }
+
+    /* sidebar overlay */
+    #sidebarOverlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.35);
+      z-index: 150;
+    }
+    #sidebarOverlay.open { display: block; }
+
+    /* no data */
+    .empty-state {
+      text-align: center; padding: 40px 20px;
+      color: var(--text-3);
+    }
+    .empty-state i { font-size: 36px; margin-bottom: 12px; display: block; }
+    .empty-state p { font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Loader ── -->
+<div id="loader"><div class="spinner"></div></div>
+
+<!-- ── Toast ── -->
+<div id="toastContainer"></div>
+
+<!-- ── Sidebar Overlay ── -->
+<div id="sidebarOverlay" onclick="App.closeSidebar()"></div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- LOGIN MODAL -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="loginBackdrop" class="modal-backdrop">
+  <div class="modal">
+    <div class="login-logo">
+      <div class="logo-icon"><i class="fas fa-laptop-code"></i></div>
+      <h1>Asset IT</h1>
+      <p>ระบบจัดการทรัพย์สินไอที</p>
+    </div>
+    <div class="modal-body">
+      <form id="loginForm" style="display:flex;flex-direction:column;gap:14px;margin-top:8px;">
+        <div class="form-group">
+          <label class="form-label">แผนก</label>
+          <select id="loginDept" class="form-input"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">รหัสผ่าน</label>
+          <input type="password" id="loginPw" class="form-input" placeholder="กรอกรหัสผ่าน" />
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:11px;">
+          <i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- CONFIRM MODAL -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="confirmBackdrop" class="modal-backdrop hidden">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <span id="confirmTitle" class="modal-title"></span>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMsg" style="font-size:14px;color:var(--text-2);"></p>
+    </div>
+    <div class="modal-footer">
+      <button id="confirmCancel" class="btn btn-ghost btn-sm">ยกเลิก</button>
+      <button id="confirmOk"     class="btn btn-danger btn-sm">ยืนยัน</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ASSET DETAIL MODAL -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div id="detailBackdrop" class="modal-backdrop hidden">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title">รายละเอียดทรัพย์สิน</span>
+      <button class="btn-close" onclick="App.closeDetail()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-grid" id="detailGrid"></div>
+      <div style="margin-top:16px;">
+        <div class="form-label" style="margin-bottom:8px;">ประวัติการใช้งาน</div>
+        <div class="history-list" id="historyList"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" onclick="App.closeDetail()">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- APP SHELL -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="app-shell" id="appShell" style="display:none;">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon"><i class="fas fa-laptop-code"></i></div>
+      <div>
+        <div class="logo-text">Asset IT</div>
+        <div class="logo-sub">Asset Management</div>
+      </div>
+    </div>
+
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebarAvatar">IT</div>
+      <div class="user-name" id="sidebarName">—</div>
+      <div class="user-role" id="sidebarRole">—</div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-label">เมนูหลัก</div>
+      <div class="nav-item active" id="navDashboard" onclick="App.showPage('dashboard')">
+        <span class="nav-icon"><i class="fas fa-chart-pie"></i></span>
+        แดชบอร์ด
+      </div>
+      <div class="nav-item" id="navAssets" onclick="App.showPage('assetList')">
+        <span class="nav-icon"><i class="fas fa-boxes-stacked"></i></span>
+        รายการทรัพย์สิน
+        <span class="nav-badge hidden" id="pendingBadge">0</span>
+      </div>
+      <div class="nav-item" id="navAdd" onclick="App.showAddAsset()">
+        <span class="nav-icon"><i class="fas fa-plus-circle"></i></span>
+        เพิ่มทรัพย์สิน
+      </div>
+      <div class="nav-item hidden" id="navDepts" onclick="App.showPage('departments')">
+        <span class="nav-icon"><i class="fas fa-building"></i></span>
+        จัดการแผนก
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="App.logout()">
+        <i class="fas fa-arrow-right-from-bracket"></i> ออกจากระบบ
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <button class="btn-mobile-menu" onclick="App.toggleSidebar()">
+        <i class="fas fa-bars"></i>
+      </button>
+      <span class="topbar-title" id="topbarTitle">แดชบอร์ด</span>
+      <div class="topbar-spacer"></div>
+      <!-- global search (asset list only) -->
+      <div class="topbar-search" id="globalSearchWrap" style="display:none;">
+        <i class="fas fa-magnifying-glass"></i>
+        <input type="text" id="globalSearch" placeholder="ค้นหาทรัพย์สิน..." />
+      </div>
+      <!-- action buttons -->
+      <div style="display:flex;gap:8px;align-items:center;" id="topActions"></div>
+    </header>
+
+    <!-- Pages -->
+    <div class="page-area">
+
+      <!-- ══ DASHBOARD ══════════════════════════════════════ -->
+      <div id="pageDashboard" class="page active">
+        <!-- Stat Cards -->
+        <div class="stat-grid" id="statGrid">
+          <div class="stat-card sc-total">
+            <div class="stat-icon"><i class="fas fa-layer-group"></i></div>
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-label">ทั้งหมด</div>
+          </div>
+          <div class="stat-card sc-ok">
+            <div class="stat-icon"><i class="fas fa-circle-check"></i></div>
+            <div class="stat-value" id="statOk">0</div>
+            <div class="stat-label">ปกติ</div>
+          </div>
+          <div class="stat-card sc-broken">
+            <div class="stat-icon"><i class="fas fa-triangle-exclamation"></i></div>
+            <div class="stat-value" id="statBroken">0</div>
+            <div class="stat-label">เสีย</div>
+          </div>
+          <div class="stat-card sc-reserve">
+            <div class="stat-icon"><i class="fas fa-box-archive"></i></div>
+            <div class="stat-value" id="statReserve">0</div>
+            <div class="stat-label">สำรอง</div>
+          </div>
+          <div class="stat-card sc-pending hidden" id="statPendingCard">
+            <div class="stat-icon"><i class="fas fa-clock"></i></div>
+            <div class="stat-value" id="statPending">0</div>
+            <div class="stat-label">รออนุมัติ</div>
+          </div>
+          <div class="stat-card sc-lost">
+            <div class="stat-icon"><i class="fas fa-circle-question"></i></div>
+            <div class="stat-value" id="statLost">0</div>
+            <div class="stat-label">หาไม่เจอ</div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="chart-grid">
+          <div class="card">
+            <div class="card-title">สถานะทรัพย์สิน</div>
+            <div class="chart-wrap"><canvas id="chartStatus"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title">ประเภทอุปกรณ์ (Top 8)</div>
+            <div class="chart-wrap"><canvas id="chartType"></canvas></div>
+          </div>
+          <div class="card chart-full">
+            <div class="card-title">ทรัพย์สินตามแผนก</div>
+            <div class="chart-wrap-tall"><canvas id="chartDept"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ASSET LIST ══════════════════════════════════════ -->
+      <div id="pageAssetList" class="page">
+        <div class="page-header">
+          <h2>รายการทรัพย์สิน</h2>
+        </div>
+
+        <div class="filter-bar">
+          <input type="text" id="filterSearch" placeholder="🔍 ค้นหา ID, ชื่อ, ผู้ใช้..." />
+          <select id="filterDept"><option value="all">ทุกแผนก</option></select>
+          <select id="filterStatus">
+            <option value="all">ทุกสถานะ</option>
+            <option value="ปกติ">ปกติ</option>
+            <option value="สำรอง">สำรอง</option>
+            <option value="เสีย">เสีย</option>
+            <option value="หาไม่เจอ">หาไม่เจอ</option>
+            <option value="รออนุมัติ">รออนุมัติ</option>
+          </select>
+          <select id="filterType">
+            <option value="all">ทุกประเภท</option>
+          </select>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-inner">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>ชื่อทรัพย์สิน</th>
+                  <th>ผู้ใช้</th>
+                  <th>แผนก</th>
+                  <th>ประเภท</th>
+                  <th>สถานะ</th>
+                  <th style="text-align:right;">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody id="assetTableBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <span class="pagination-info" id="paginationInfo">แสดง 0–0 จาก 0</span>
+            <div class="pagination-btns">
+              <button class="btn-page" id="prevBtn"><i class="fas fa-chevron-left"></i></button>
+              <button class="btn-page" id="nextBtn"><i class="fas fa-chevron-right"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ASSET FORM ══════════════════════════════════════ -->
+      <div id="pageAssetForm" class="page">
+        <div class="page-header">
+          <h2 id="formTitle">เพิ่มทรัพย์สินใหม่</h2>
+        </div>
+        <div class="card">
+          <form id="assetForm">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">รหัสทรัพย์สิน (ID)</label>
+                <input id="fId" type="text" class="form-input" readonly />
+              </div>
+              <div class="form-group">
+                <label class="form-label">ชื่อทรัพย์สิน *</label>
+                <input id="fName" type="text" class="form-input" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">ผู้ใช้งาน</label>
+                <input id="fUsername" type="text" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">ชื่อเล่น</label>
+                <input id="fNickname" type="text" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">ประเภท *</label>
+                <select id="fType" class="form-input" required></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Serial Number</label>
+                <input id="fSerial" type="text" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">แผนก *</label>
+                <select id="fDept" class="form-input" required></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">วันที่ซื้อ</label>
+                <input id="fPurchaseDate" type="date" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">ราคา (บาท)</label>
+                <input id="fPrice" type="number" class="form-input" min="0" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">อายุการใช้งาน</label>
+                <input id="fLifespan" type="text" class="form-input" readonly />
+              </div>
+              <div class="form-group">
+                <label class="form-label">วันหมดประกัน</label>
+                <input id="fWarranty" type="date" class="form-input" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">สถานะ *</label>
+                <select id="fStatus" class="form-input" required></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">เช็คล่าสุด</label>
+                <input id="fLastCheck" type="date" class="form-input" />
+              </div>
+              <div class="form-group full">
+                <label class="form-label">สเปค</label>
+                <textarea id="fSpecs" class="form-input" rows="2"></textarea>
+              </div>
+              <div class="form-group full">
+                <label class="form-label">หมายเหตุ</label>
+                <textarea id="fNotes" class="form-input" rows="2"></textarea>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+              <button type="button" class="btn btn-ghost" onclick="App.showPage('assetList')">ยกเลิก</button>
+              <button type="submit" class="btn btn-primary"><i class="fas fa-floppy-disk"></i> บันทึก</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ══ DEPARTMENTS ════════════════════════════════════ -->
+      <div id="pageDepartments" class="page">
+        <div class="page-header">
+          <h2>จัดการแผนก</h2>
+        </div>
+        <div class="card" style="margin-bottom:16px;">
+          <form id="deptForm" style="display:flex;gap:10px;align-items:flex-end;">
+            <div class="form-group" style="flex:1;margin-bottom:0;">
+              <label class="form-label">ชื่อแผนกใหม่</label>
+              <input id="newDeptName" type="text" class="form-input" placeholder="กรอกชื่อแผนก" required />
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-plus"></i> เพิ่มแผนก
+            </button>
+          </form>
+        </div>
+        <div class="card">
+          <div class="dept-list" id="deptList"></div>
+        </div>
+      </div>
+
+    </div><!-- /page-area -->
+  </div><!-- /main-content -->
+</div><!-- /app-shell -->
+
+<script type="module" src="./script.js"></script>
+</body>
+</html>
