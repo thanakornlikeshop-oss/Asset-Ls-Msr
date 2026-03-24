@@ -33,6 +33,13 @@
       --accent-light: #ebf8ff;
       --accent-dark:  #2b6cb0;
 
+      --danger:        #d93025;
+      --danger-bg:     #fce8e6;
+      --success:       #1e8e3e;
+      --success-bg:    #e6f4ea;
+      --amber:         #f9ab00;
+      --amber-light:   #fef7e0;
+
       --stat-total-bg:   #eaf2ff;
       --stat-total-text: #1a73e8;
       --stat-ok-bg:      #e6f4ea;
@@ -82,6 +89,13 @@
       --accent:       #00d2ff;
       --accent-light: rgba(0, 210, 255, 0.15);
       --accent-dark:  #0099cc;
+
+      --danger:        #ff0080;
+      --danger-bg:     rgba(255, 0, 128, 0.15);
+      --success:       #00f260;
+      --success-bg:    rgba(0, 242, 96, 0.15);
+      --amber:         #ffac33;
+      --amber-light:   rgba(255, 172, 51, 0.15);
 
       --stat-total-bg:   rgba(0, 210, 255, 0.1);
       --stat-total-text: #00d2ff;
@@ -469,8 +483,8 @@
     .btn-icon-edit:hover { background: var(--accent-light); color: var(--accent-dark); }
     .btn-icon-approve{ color: var(--text-3); }
     .btn-icon-approve:hover { background: var(--success-bg); color: var(--success); }
-    .btn-icon-delete { color: var(--text-3); }
-    .btn-icon-delete:hover { background: var(--danger-bg); color: var(--danger); }
+    .btn-icon-delete { color: var(--danger); }
+    .btn-icon-delete:hover { background: var(--danger-bg); color: var(--danger); box-shadow: 0 0 0 2px var(--danger-bg); }
 
     /* ── Buttons ──────────────────────────────────────────── */
     .btn {
