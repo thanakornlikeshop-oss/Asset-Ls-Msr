@@ -297,15 +297,17 @@ const App = {
     const canvas = document.getElementById("chartStatus");
     if (!canvas) return;
     if (this.charts.status) this.charts.status.destroy();
+    
     const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const counts = {};
     const colors = isDark ? {
-      ปกติ: "#3fb950", สำรอง: "#d29922", เสีย: "#f85149",
-      หาไม่เจอ: "#484f58", รออนุมัติ: "#db6d28",
+      ปกติ: "#00f260", สำรอง: "#ffac33", เสีย: "#ff0080",
+      หาไม่เจอ: "#bcbcbc", รออนุมัติ: "#00d2ff",
     } : {
-      ปกติ: "#238636", สำรอง: "#9a6700", เสีย: "#cf222e",
-      หาไม่เจอ: "#6e7781", รออนุมัติ: "#e07a5f",
+      ปกติ: "#1e8e3e", สำรอง: "#f9ab00", เสีย: "#d93025",
+      หาไม่เจอ: "#5f6368", รออนุมัติ: "#1a73e8",
     };
-    const textColor = isDark ? "#8b949e" : "#636c76";
+    const textColor = isDark ? "#ffffff" : "#4a5568";
 
     data.forEach((a) => {
       const k = a.is_approved === false ? "รออนุมัติ" : (a.status || "ไม่ระบุ");
@@ -354,11 +356,11 @@ const App = {
     // top 8
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
     const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-    const textColor = isDark ? "#8b949e" : "#636c76";
-    const gridColor = isDark ? "#30363d" : "#ebf0f4";
+    const textColor = isDark ? "#ffffff" : "#4a5568";
+    const gridColor = isDark ? "#404040" : "#e2e8f0";
     const palette = isDark 
-      ? ["#3fb950", "#f85149", "#d29922", "#bc8cff", "#484f58", "#238636", "#db6d28", "#8b949e"]
-      : ["#238636", "#cf222e", "#9a6700", "#8250df", "#6e7781", "#1a7f37", "#f85149", "#636c76"];
+      ? ["#00d2ff", "#10b981", "#ff0080", "#ffac33", "#bc8cff", "#00f260", "#f85149", "#808080"]
+      : ["#1a73e8", "#1e8e3e", "#d93025", "#f9ab00", "#8250df", "#3182ce", "#e07a5f", "#718096"];
 
     this.charts.type = new Chart(canvas, {
       type: "bar",
@@ -391,8 +393,8 @@ const App = {
     data.forEach((a) => { const k = a.department || "ไม่ระบุ"; counts[k] = (counts[k] || 0) + 1; });
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const isDark = document.documentElement.getAttribute("data-theme") === "dark";
-    const textColor = isDark ? "#8b949e" : "#636c76";
-    const gridColor = isDark ? "#30363d" : "#ebf0f4";
+    const textColor = isDark ? "#ffffff" : "#4a5568";
+    const gridColor = isDark ? "#404040" : "#e2e8f0";
 
     this.charts.dept = new Chart(canvas, {
       type: "bar",
@@ -400,8 +402,8 @@ const App = {
         labels: sorted.map((s) => s[0]),
         datasets: [{
           data: sorted.map((s) => s[1]),
-          backgroundColor: isDark ? "#238636" : "#2ea043",
-          hoverBackgroundColor: isDark ? "#2ea043" : "#238636",
+          backgroundColor: isDark ? "#00d2ff" : "#1a73e8",
+          hoverBackgroundColor: isDark ? "#00f260" : "#1e8e3e",
           borderRadius: 4,
           borderSkipped: false,
         }],
