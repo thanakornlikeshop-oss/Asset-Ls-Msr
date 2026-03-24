@@ -21,7 +21,7 @@ const App = {
   // ── Supabase Config ──────────────────────────────────────
   // TODO: ใส่ค่าจาก Supabase Dashboard → Settings → API
   supabaseUrl: "https://afftspqsbojqvjidpidz.supabase.co",
-  supabaseKey: "sb_publishable_YhHtkm_LAkvLM9AgnPjZTQ_9g4Ietih",
+  supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFmZnRzcHFzYm9qcXZqaWRwaWR6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzMDQ2OTQsImV4cCI6MjA4OTg4MDY5NH0.Rpyz7l7YQjm5wNsBMiKwotozMgLIoWGdrPGE2lD8RoM",
 
   // ── Constants ────────────────────────────────────────────
   assetTypes: {
