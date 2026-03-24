@@ -44,15 +44,24 @@ const App = {
 
   // ── Init ─────────────────────────────────────────────────
   async init() {
+    this.showLoader();
     try {
       this.db = createClient(this.supabaseUrl, this.supabaseKey);
     } catch (e) {
-      this.toast("การเชื่อมต่อฐานข้อมูลล้มเหลว", "error");
-      return;
+      console.error("Supabase Error:", e);
+      this.toast("การเชื่อมต่อ Supabase ล้มเหลว", "error");
     }
+
     this.bindEvents();
-    await this.loadDepartments();
+
+    try {
+      await this.loadDepartments();
+    } catch (e) {
+      console.error("Load Depts Error:", e);
+    }
+
     this.populateDropdowns();
+    this.hideLoader();
   },
 
   bindEvents() {
@@ -146,12 +155,20 @@ const App = {
 
   // ── Data ─────────────────────────────────────────────────
   async loadDepartments() {
-    const { data } = await this.db.from("departments").select("name").order("name");
-    if (!data || data.length === 0) {
-      await this.db.from("departments").insert({ name: "IT" });
-      this.departments = ["IT"];
-    } else {
-      this.departments = data.map((d) => d.name);
+    try {
+      const { data, error } = await this.db.from("departments").select("name").order("name");
+      if (error) throw error;
+      
+      if (!data || data.length === 0) {
+        const { error: insErr } = await this.db.from("departments").insert({ name: "IT" });
+        if (insErr) throw insErr;
+        this.departments = ["IT"];
+      } else {
+        this.departments = data.map((d) => d.name);
+      }
+    } catch (e) {
+      console.warn("Could not load departments from DB, using fallback", e);
+      this.departments = ["IT"]; // Fallback เพื่อให้เข้าสู่ระบบได้
     }
   },
 
