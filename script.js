@@ -60,8 +60,30 @@ const App = {
       console.error("Load Depts Error:", e);
     }
 
+    this.initTheme();
     this.populateDropdowns();
     this.hideLoader();
+  },
+
+  initTheme() {
+    const saved = localStorage.getItem("asset_theme") || "light";
+    document.documentElement.setAttribute("data-theme", saved);
+    this.updateThemeIcon(saved);
+  },
+
+  toggleTheme() {
+    const curr = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", curr);
+    localStorage.setItem("asset_theme", curr);
+    this.updateThemeIcon(curr);
+    if (this.dataLoaded) this.refreshCurrentPage();
+  },
+
+  updateThemeIcon(theme) {
+    const icon = document.querySelector("#themeToggle i");
+    if (icon) {
+      icon.className = theme === "dark" ? "fas fa-sun" : "fas fa-moon";
+    }
   },
 
   bindEvents() {
@@ -275,11 +297,16 @@ const App = {
     const canvas = document.getElementById("chartStatus");
     if (!canvas) return;
     if (this.charts.status) this.charts.status.destroy();
-    const counts = {};
-    const colors = {
-      ปกติ: "#3a9b8a", สำรอง: "#c68d3e", เสีย: "#d94f3d",
-      หาไม่เจอ: "#8a8580", รออนุมัติ: "#e07a5f",
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const colors = isDark ? {
+      ปกติ: "#3fb950", สำรอง: "#d29922", เสีย: "#f85149",
+      หาไม่เจอ: "#484f58", รออนุมัติ: "#db6d28",
+    } : {
+      ปกติ: "#238636", สำรอง: "#9a6700", เสีย: "#cf222e",
+      หาไม่เจอ: "#6e7781", รออนุมัติ: "#e07a5f",
     };
+    const textColor = isDark ? "#8b949e" : "#636c76";
+
     data.forEach((a) => {
       const k = a.is_approved === false ? "รออนุมัติ" : (a.status || "ไม่ระบุ");
       counts[k] = (counts[k] || 0) + 1;
@@ -299,7 +326,16 @@ const App = {
         responsive: true, maintainAspectRatio: false,
         cutout: "65%",
         plugins: {
-          legend: { position: "right", labels: { padding: 14, font: { size: 12, family: "'DM Sans'" }, usePointStyle: true, pointStyleWidth: 8 } },
+          legend: { 
+            position: "right", 
+            labels: { 
+              padding: 14, 
+              color: textColor,
+              font: { size: 12, family: "'DM Sans'" }, 
+              usePointStyle: true, 
+              pointStyleWidth: 8 
+            } 
+          },
           tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.parsed} ชิ้น` } },
         },
       },
@@ -317,7 +353,13 @@ const App = {
     });
     // top 8
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 8);
-    const palette = ["#3a9b8a", "#e07a5f", "#c68d3e", "#7c6fa0", "#5c6b7a", "#3a9b6b", "#d94f3d", "#8a8580"];
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const textColor = isDark ? "#8b949e" : "#636c76";
+    const gridColor = isDark ? "#30363d" : "#ebf0f4";
+    const palette = isDark 
+      ? ["#3fb950", "#f85149", "#d29922", "#bc8cff", "#484f58", "#238636", "#db6d28", "#8b949e"]
+      : ["#238636", "#cf222e", "#9a6700", "#8250df", "#6e7781", "#1a7f37", "#f85149", "#636c76"];
+
     this.charts.type = new Chart(canvas, {
       type: "bar",
       data: {
@@ -325,7 +367,7 @@ const App = {
         datasets: [{
           data: sorted.map((s) => s[1]),
           backgroundColor: palette,
-          borderRadius: 6,
+          borderRadius: 4,
           borderSkipped: false,
         }],
       },
@@ -334,8 +376,8 @@ const App = {
         indexAxis: "y",
         plugins: { legend: { display: false } },
         scales: {
-          x: { grid: { color: "#f0ece6" }, ticks: { font: { size: 11 }, color: "#9b9389" } },
-          y: { grid: { display: false }, ticks: { font: { size: 12 }, color: "#5c564f" } },
+          x: { grid: { color: gridColor }, ticks: { font: { size: 11 }, color: textColor } },
+          y: { grid: { display: false }, ticks: { font: { size: 12 }, color: textColor } },
         },
       },
     });
@@ -348,15 +390,19 @@ const App = {
     const counts = {};
     data.forEach((a) => { const k = a.department || "ไม่ระบุ"; counts[k] = (counts[k] || 0) + 1; });
     const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+    const textColor = isDark ? "#8b949e" : "#636c76";
+    const gridColor = isDark ? "#30363d" : "#ebf0f4";
+
     this.charts.dept = new Chart(canvas, {
       type: "bar",
       data: {
         labels: sorted.map((s) => s[0]),
         datasets: [{
           data: sorted.map((s) => s[1]),
-          backgroundColor: "#3a9b8a",
-          hoverBackgroundColor: "#2a7a6b",
-          borderRadius: 5,
+          backgroundColor: isDark ? "#238636" : "#2ea043",
+          hoverBackgroundColor: isDark ? "#2ea043" : "#238636",
+          borderRadius: 4,
           borderSkipped: false,
         }],
       },
@@ -364,8 +410,8 @@ const App = {
         responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { grid: { display: false }, ticks: { font: { size: 11 }, color: "#5c564f", maxRotation: 35 } },
-          y: { grid: { color: "#f0ece6" }, ticks: { font: { size: 11 }, color: "#9b9389", precision: 0 } },
+          x: { grid: { display: false }, ticks: { font: { size: 11 }, color: textColor, maxRotation: 35 } },
+          y: { grid: { color: gridColor }, ticks: { font: { size: 11 }, color: textColor, precision: 0 } },
         },
       },
     });
@@ -853,24 +899,24 @@ const App = {
           const id = r.ID || r["รหัส"] || r["id"];
           if (!id) return;
 
-          const dept = (r["แผนก"] || "IT").trim();
+          const dept = (r["แผนก"] || r["department"] || r["Department"] || "IT").trim();
           deptsFound.add(dept);
 
           assetRows.push({
             id: String(id),
-            name: r["ชื่อทรัพย์สิน"] || "",
-            username: r["ผู้ใช้งาน"] || "",
-            nickname: r["ชื่อเล่น"] || "",
-            type: typeByName[r["ประเภท"]] || r["ประเภท"] || "OT",
-            serial: String(r["Serial Number"] || ""),
+            name: r["ชื่อทรัพย์สิน"] || r["name"] || r["Name"] || "",
+            username: r["ผู้ใช้งาน"] || r["username"] || r["User"] || "",
+            nickname: r["ชื่อเล่น"] || r["nickname"] || "",
+            type: typeByName[r["ประเภท"]] || r["type"] || r["Type"] || "OT",
+            serial: String(r["Serial Number"] || r["serial"] || r["Serial"] || ""),
             department: dept,
-            purchase_date: r["วันที่ซื้อ"] || null,
-            price: r["ราคา"] || null,
-            warranty_expiry: r["วันหมดประกัน"] || null,
-            status: r["สถานะ"] || "ปกติ",
-            last_check: r["เช็คล่าสุด"] || null,
-            specs: r["สเปค"] || "",
-            notes: r["หมายเหตุ"] || "",
+            purchase_date: this.normalizeDate(r["วันที่ซื้อ"] || r["purchase_date"] || r["Date"]),
+            price: r["ราคา"] || r["price"] || r["Price"] || null,
+            warranty_expiry: this.normalizeDate(r["วันหมดประกัน"] || r["warranty_expiry"] || r["Warranty"]),
+            status: r["สถานะ"] || r["status"] || r["Status"] || "ปกติ",
+            last_check: this.normalizeDate(r["เช็คล่าสุด"] || r["last_check"]),
+            specs: r["สเปค"] || r["specs"] || r["Specs"] || "",
+            notes: r["หมายเหตุ"] || r["notes"] || r["Notes"] || "",
             is_approved: true,
             usage_history: [],
           });
@@ -903,10 +949,45 @@ const App = {
   },
 
   // ── Utilities ─────────────────────────────────────────────
+  normalizeDate(dateStr) {
+    if (!dateStr || dateStr === "-" || dateStr === "null") return null;
+    
+    // Handle Excel numeric date
+    if (typeof dateStr === "number") {
+      const d = new Date((dateStr - 25569) * 86400 * 1000);
+      return d.toISOString().split('T')[0];
+    }
+    
+    const s = String(dateStr).trim();
+    if (!s) return null;
+    
+    // Check for DD-MM-YYYY or DD/MM/YYYY
+    const dmyMatch = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+    if (dmyMatch) {
+      const [_, d, m, y] = dmyMatch;
+      return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+    
+    // Check for YYYY-MM-DD
+    const isoMatch = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+    if (isoMatch) {
+      const [_, y, m, d] = isoMatch;
+      return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+    }
+
+    try {
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
+    } catch(e) {}
+    
+    return s;
+  },
+
   calcAge(dateStr) {
     if (!dateStr) return "-";
-    const start = new Date(dateStr); const end = new Date();
-    if (isNaN(start)) return "-";
+    const start = new Date(dateStr); 
+    const end = new Date();
+    if (isNaN(start.getTime())) return "-";
     let y = end.getFullYear() - start.getFullYear();
     let m = end.getMonth() - start.getMonth();
     let d = end.getDate() - start.getDate();
@@ -921,7 +1002,9 @@ const App = {
 
   formatDate(iso) {
     if (!iso) return "-";
-    return new Date(iso).toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString("th-TH", { year: "numeric", month: "short", day: "numeric" });
   },
 
   showLoader() { document.getElementById("loader").classList.remove("hidden"); },
@@ -929,6 +1012,7 @@ const App = {
 
   toast(msg, type = "info") {
     const c = document.getElementById("toastContainer");
+    if (!c) return;
     const t = document.createElement("div");
     const icon = { success: "fa-circle-check", error: "fa-circle-xmark", info: "fa-circle-info" }[type] || "fa-circle-info";
     t.className = `toast toast-${type}`;

@@ -13,55 +13,97 @@
   <style>
     /* ── Design Tokens ───────────────────────────────────── */
     :root {
-      --bg:           #f0ece6;
-      --surface:      #faf8f5;
+      --bg:           #f6f8fa;
+      --surface:      #fff;
       --surface-2:    #fff;
-      --sidebar-bg:   #faf8f5;
-      --border:       #e8e2d9;
-      --border-light: #f0ece6;
+      --sidebar-bg:   #f6f8fa;
+      --border:       #d0d7de;
+      --border-light: #ebf0f4;
 
-      --text-1: #1a1714;
-      --text-2: #5c564f;
-      --text-3: #9b9389;
+      --text-1: #1f2328;
+      --text-2: #636c76;
+      --text-3: #8c959f;
 
-      /* accent palette — teal from the image */
-      --accent:       #3a9b8a;
-      --accent-light: #e8f5f2;
-      --accent-dark:  #2a7a6b;
+      --accent:       #238636;
+      --accent-light: #dafbe1;
+      --accent-dark:  #1a7f37;
 
-      --coral:        #e07a5f;
-      --coral-light:  #fdf0ec;
-      --amber:        #c68d3e;
-      --amber-light:  #fdf4e7;
-      --purple:       #7c6fa0;
-      --purple-light: #f2f0f8;
-      --slate:        #5c6b7a;
-      --slate-light:  #eef1f4;
+      --coral:        #cf222e;
+      --coral-light:  #ffebe9;
+      --amber:        #9a6700;
+      --amber-light:  #fff8c5;
+      --purple:       #8250df;
+      --purple-light: #f5f0ff;
+      --slate:        #6e7781;
+      --slate-light:  #f3f6f9;
 
-      --success:      #3a9b6b;
-      --success-bg:   #e8f5ee;
-      --warning:      #c68d3e;
-      --warning-bg:   #fdf4e7;
-      --danger:       #d94f3d;
-      --danger-bg:    #fdecea;
-      --neutral:      #8a8580;
-      --neutral-bg:   #f0ece6;
+      --success:      #1a7f37;
+      --success-bg:   #dafbe1;
+      --warning:      #9a6700;
+      --warning-bg:   #fff8c5;
+      --danger:       #cf222e;
+      --danger-bg:    #ffebe9;
+      --neutral:      #6e7781;
+      --neutral-bg:   #f3f6f9;
 
-      --radius-sm: 6px;
-      --radius-md: 10px;
-      --radius-lg: 14px;
-      --radius-xl: 20px;
-      --radius-2xl: 28px;
+      --radius-sm: 4px;
+      --radius-md: 6px;
+      --radius-lg: 8px;
+      --radius-xl: 12px;
+      --radius-2xl: 16px;
       --radius-full: 9999px;
 
-      --shadow-xs: 0 1px 3px rgba(0,0,0,.05);
-      --shadow-sm: 0 2px 10px rgba(0,0,0,.07);
-      --shadow-md: 0 4px 20px rgba(0,0,0,.09);
-      --shadow-lg: 0 8px 32px rgba(0,0,0,.11);
+      --shadow-xs: 0 1px 2px rgba(31,35,40,.075);
+      --shadow-sm: 0 3px 6px rgba(140,149,159,.15);
+      --shadow-md: 0 8px 24px rgba(140,149,159,.2);
+      --shadow-lg: 0 12px 48px rgba(0,0,0,.15);
 
       --sidebar-w: 240px;
-      --topbar-h: 60px;
-      --trans: 0.18s cubic-bezier(.4,0,.2,1);
+      --topbar-h: 64px;
+      --trans: 0.2s cubic-bezier(.3,0,.5,1);
+      
+      --loader-bg: rgba(255,255,255,.8);
+    }
+
+    [data-theme="dark"] {
+      --bg:           #0d1117;
+      --surface:      #161b22;
+      --surface-2:    #0d1117;
+      --sidebar-bg:   #0d1117;
+      --border:       #30363d;
+      --border-light: #21262d;
+
+      --text-1: #e6edf3;
+      --text-2: #8b949e;
+      --text-3: #7d8590;
+
+      --accent:       #238636;
+      --accent-light: rgba(35, 134, 54, 0.15);
+      --accent-dark:  #2ea043;
+
+      --coral:        #f85149;
+      --coral-light:  rgba(248, 81, 73, 0.15);
+      --amber:        #d29922;
+      --amber-light:  rgba(210, 153, 34, 0.15);
+      --purple:       #bc8cff;
+      --purple-light: rgba(188, 140, 255, 0.15);
+      --slate:        #484f58;
+      --slate-light:  rgba(72, 79, 88, 0.15);
+
+      --success:      #3fb950;
+      --success-bg:   rgba(63, 185, 80, 0.15);
+      --warning:      #d29922;
+      --warning-bg:   rgba(210, 153, 34, 0.15);
+      --danger:       #f85149;
+      --danger-bg:    rgba(248, 81, 73, 0.15);
+      --neutral:      #484f58;
+      --neutral-bg:   rgba(72, 79, 88, 0.15);
+
+      --shadow-xs: 0 1px 2px rgba(0,0,0,.5);
+      --shadow-sm: 0 3px 6px rgba(0,0,0,.6);
+      --shadow-md: 0 8px 24px rgba(0,0,0,.7);
+      
+      --loader-bg: rgba(13, 17, 23, 0.85);
     }
 
     /* ── Reset & Base ────────────────────────────────────── */
@@ -553,8 +595,8 @@
     /* ── Loader ───────────────────────────────────────────── */
     #loader {
       position: fixed; inset: 0;
-      background: rgba(240,236,230,.7);
-      backdrop-filter: blur(2px);
+      background: var(--loader-bg);
+      backdrop-filter: blur(4px);
       z-index: 9999;
       display: flex; align-items: center; justify-content: center;
     }
@@ -825,6 +867,10 @@
       </button>
       <span class="topbar-title" id="topbarTitle">แดชบอร์ด</span>
       <div class="topbar-spacer"></div>
+    
+    <button class="btn-icon" id="themeToggle" onclick="App.toggleTheme()" title="สลับโหมดสี" style="margin-right: 8px;">
+      <i class="fas fa-moon"></i>
+    </button>
       <!-- global search (asset list only) -->
       <div class="topbar-search" id="globalSearchWrap" style="display:none;">
         <i class="fas fa-magnifying-glass"></i>
